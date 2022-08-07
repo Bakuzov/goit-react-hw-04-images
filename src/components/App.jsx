@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { useEffect, useState } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Searchbar } from './Searchbar/Searchbar';
@@ -9,80 +9,66 @@ import { Loader } from './Loader/Loader';
 import { fetchApi } from 'fetchApi/fetchApi';
 import { Button } from './Button/Button';
 
-export class App extends Component {
-  state = {
-    images: [],
-    loading: false,
-    totalImg: 0,
-    page: 1,
-    perPage: 12,
-    isShown: false,
-    search: '',
-    modalImg: null,
-  };
+export const App = () => {
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [totalImg, setTotalImg] = useState(0);
+  const [page, setPage] = useState(1);
+  const [isShown, setIsShown] = useState(false);
+  const [search, setSearch] = useState('');
+  const [modalImg, setModalImg] = useState(null);
 
-  componentDidUpdate(prevProps, prevState) {
-    const { page, search } = this.state;
-    if (prevState.page !== page || prevState.search !== search) {
-      this.fetchImages();
+  useEffect(() => {
+    if (search === '') {
+      return;
     }
-  }
-
-  fetchImages = () => {
-    this.setState({ loading: true });
-    fetchApi(this.state.search, this.state.page)
+    setLoading(true);
+    fetchApi(search, page)
       .then(({ data }) => {
-        this.setState(prevs => ({
-          images: [...prevs.images, ...mapper(data.hits)],
-          totalImg: data.total,
-        }));
+        setImages(ps => [...ps, ...mapper(data.hits)]);
+        setTotalImg(data.total);
       })
-      .finally(() => this.setState({ loading: false }));
+      .finally(() => setLoading(false));
+  }, [search, page]);
+
+  const handleModalImg = modalImg => {
+    setModalImg(modalImg);
+  };
+  const handleModalClose = () => {
+    setModalImg(null);
   };
 
-  handleModalImg = modalImg => {
-    this.setState({ modalImg: modalImg });
-  };
-  handleModalClose = () => {
-    this.setState({ modalImg: null });
-  };
-
-  handleFormSubmit = search => {
-    if (search === this.state.search) {
+  const handleFormSubmit = input => {
+    if (input === search) {
       return;
     } else {
-      this.setState({ search: search, images: [], isShown: true, page: 1 });
+      setSearch(input);
+      setImages([]);
+      setIsShown(true);
+      setPage(1);
     }
   };
 
-  handlerLoadMore = () => {
-    this.setState(ps => ({ page: ps.page + 1 }));
+  const handlerLoadMore = () => {
+    setPage(ps => ps + 1);
   };
 
-  render() {
-    const { images, modalImg, isShown, loading, totalImg } = this.state;
-    return (
-      <div>
-        <Searchbar onSubmit={this.handleFormSubmit} />
-        {loading && <Loader />}
+  return (
+    <div>
+      <Searchbar onSubmit={handleFormSubmit} />
+      {loading && <Loader />}
 
-        {isShown && (
-          <>
-            <ImageGallery
-              handleModalImg={this.handleModalImg}
-              images={images}
-            />
-            {totalImg > 12 && (
-              <Button textContent="Load More" onClick={this.handlerLoadMore} />
-            )}
-            {loading && <Loader />}
-          </>
-        )}
-        {modalImg && (
-          <Modal largeImageURL={modalImg} close={this.handleModalClose} />
-        )}
-        <ToastContainer />
-      </div>
-    );
-  }
-}
+      {isShown && (
+        <>
+          <ImageGallery handleModalImg={handleModalImg} images={images} />
+          {totalImg > 12 && (
+            <Button textContent="Load More" onClick={handlerLoadMore} />
+          )}
+          {loading && <Loader />}
+        </>
+      )}
+      {modalImg && <Modal largeImageURL={modalImg} close={handleModalClose} />}
+      <ToastContainer />
+    </div>
+  );
+};

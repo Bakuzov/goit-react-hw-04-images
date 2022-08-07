@@ -1,41 +1,35 @@
-import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-
+import { useEffect } from 'react';
 import { Modal1, DivOverlay, Img } from './Modal.styled';
 
-export class Modal extends Component {
-  static propTypes = {
-    close: PropTypes.func.isRequired,
-  };
+export const Modal = ({ largeImageURL, close }) => {
+  useEffect(() => {
+    const handleKeyDown = e => {
+      if (e.code === 'Escape') {
+        close();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [close]);
 
-  componentDidMount() {
-    window.addEventListener('keydown', this.handClickDown);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.handClickDown);
-  }
-
-  handClickDown = e => {
-    if (e.code === 'Escape') {
-      this.props.close();
-    }
-  };
-
-  handleClickOnOverlay = evt => {
+  const handleClickOnOverlay = evt => {
     if (evt.target === evt.currentTarget) {
-      this.props.close();
+      close();
     }
   };
 
-  render() {
-    const { largeImageURL, close } = this.props;
-    return (
-      <DivOverlay onClick={this.handleClickOnOverlay}>
-        <Modal1>
-          <Img src={largeImageURL} alt="краса" onClick={close} />
-        </Modal1>
-      </DivOverlay>
-    );
-  }
-}
+  return (
+    <DivOverlay onClick={handleClickOnOverlay}>
+      <Modal1>
+        <Img src={largeImageURL} alt="краса" onClick={close} />
+      </Modal1>
+    </DivOverlay>
+  );
+};
+
+Modal.propTypes = {
+  close: PropTypes.func.isRequired,
+};
